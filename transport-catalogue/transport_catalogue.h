@@ -25,7 +25,7 @@ struct Stop
 struct Bus
 {
     std::string name;
-    std::vector<Stop*> stops;
+    std::vector<const Stop*> stops;
 };
 
 struct BusInfo
@@ -59,9 +59,9 @@ class TransportCatalogue
     std::optional<BusInfo> GetBusInfo(std::string_view name) const;
     std::optional<StopInfo> GetStopInfo(std::string_view name) const;
 
-    void AddDistanceBetweenStops( Stop* from, Stop* to, double distance);
+    void SetDistanceBetweenStops(const Stop* from, const Stop* to, double distance);
 
-    double GetDistanceBetweenStops (Stop* from, Stop* to) const;
+    double GetDistanceBetweenStops(const Stop* from, const Stop* to) const;
 
     private:
     
@@ -75,13 +75,13 @@ class TransportCatalogue
 
     struct PairStopsHasher
     {
-        size_t operator()(const std::pair<Stop*, Stop*>& pair) const
+        size_t operator()(const std::pair<const Stop*, const Stop*>& pair) const
         {
-            return std::hash<Stop*>{}(pair.first) + 41 * std::hash<Stop*>{}(pair.second);
+            return std::hash<const Stop*>{}(pair.first) + 41 * std::hash<const Stop*>{}(pair.second);
         }
     };
 
-    std::unordered_map<std::pair<Stop*, Stop*>, double, PairStopsHasher> distances_;
+    std::unordered_map<std::pair<const Stop*, const Stop*>, double, PairStopsHasher> distances_;
     
 };
 

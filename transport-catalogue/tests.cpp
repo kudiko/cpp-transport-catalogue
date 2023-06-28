@@ -58,8 +58,8 @@ void Tester::TestTransportCatalogue()
         ts.AddStop("Flower", {2.0, 2.0});
         ts.AddStop("Honey", {2.0, 3.0});
 
-        ts.AddDistanceBetweenStops(ts.FindStop("Flower"), ts.FindStop("Honey"), 2.0);
-        ts.AddDistanceBetweenStops(ts.FindStop("Honey"), ts.FindStop("Flower"), 4.0);
+        ts.SetDistanceBetweenStops(ts.FindStop("Flower"), ts.FindStop("Honey"), 2.0);
+        ts.SetDistanceBetweenStops(ts.FindStop("Honey"), ts.FindStop("Flower"), 4.0);
 
         ASSERT_EQUAL(ts.GetDistanceBetweenStops(ts.FindStop("Flower"), ts.FindStop("Honey")), 2.0);
         ASSERT_EQUAL(ts.GetDistanceBetweenStops(ts.FindStop("Honey"), ts.FindStop("Flower")), 4.0);
@@ -72,8 +72,8 @@ void Tester::TestTransportCatalogue()
         ts.AddStop("Honey", {2.0, 2.0});
         ts.AddStop("Tree", {2.0, 3.0});
 
-        ts.AddDistanceBetweenStops(ts.FindStop("Flower"), ts.FindStop("Honey"), 2.0);
-        ts.AddDistanceBetweenStops(ts.FindStop("Honey"), ts.FindStop("Tree"), 4.0);
+        ts.SetDistanceBetweenStops(ts.FindStop("Flower"), ts.FindStop("Honey"), 2.0);
+        ts.SetDistanceBetweenStops(ts.FindStop("Honey"), ts.FindStop("Tree"), 4.0);
 
         
         ts.AddBus("001", {"Flower", "Honey", "Tree"});
@@ -192,7 +192,7 @@ void Tester::TestInputReader()
         
         ASSERT(bus_ptr->name == "my bus");
 
-        std::vector<Stop*> expected{ts.FindStop("Flower"), ts.FindStop("Tree")};
+        std::vector<const Stop*> expected{ts.FindStop("Flower"), ts.FindStop("Tree")};
         ASSERT_EQUAL(bus_ptr->stops, expected);
     }
     
@@ -210,8 +210,8 @@ void Tester::TestInputReader()
 
         ir.ReadInput(input);
 
-        std::vector<Stop*> expected1{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey")};
-        std::vector<Stop*> expected2{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey"), 
+        std::vector<const Stop*> expected1{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey")};
+        std::vector<const Stop*> expected2{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey"), 
         ts.FindStop("Tree"), ts.FindStop("Flower")};
 
         Bus* bus_ptr = ts.FindBus("001");
@@ -238,8 +238,8 @@ void Tester::TestInputReader()
 
         ir.ReadInput(input);
 
-        std::vector<Stop*> expected1{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey")};
-        std::vector<Stop*> expected2{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey"), 
+        std::vector<const Stop*> expected1{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey")};
+        std::vector<const Stop*> expected2{ts.FindStop("Flower"), ts.FindStop("Tree"), ts.FindStop("Honey"), 
         ts.FindStop("Tree"), ts.FindStop("Flower")};
 
         Bus* bus_ptr = ts.FindBus("001");

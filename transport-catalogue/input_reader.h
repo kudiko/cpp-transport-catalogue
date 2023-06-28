@@ -17,8 +17,7 @@ namespace Input
     public:
         InputReader(Core::TransportCatalogue &tc);
 
-        void ReadInput();
-        void ReadInput(std::istream &stream);
+        void ReadInput(std::istream &stream = std::cin);
 
         struct AddStopCommand
         {
@@ -41,6 +40,12 @@ namespace Input
 
     private:
         void ProcessCommand(std::string_view command);
+        AddStopCommand ParseStopCommand(std::stringstream& ss);
+        AddBusCommand ParseBusCommand(std::stringstream& ss);
+        
+
+        void SetDistancesToOtherStops(std::string_view start, std::vector<std::pair<std::string, double>> distances_to_other_stops);
+        
         void DeliverCommands();
 
         DBUpdateQueue queue_;

@@ -14,12 +14,6 @@ namespace Core
 
 void TransportCatalogue::AddStop(std::string_view name, detail::Coordinates coords)
 {
-    if (stops_index_.count(name))
-    {
-        Stop *stop_to_edit = FindStop(name);
-        stop_to_edit->coords = coords;
-        return;
-    }
     stops_.push_back({std::string(name), coords});
     std::string_view new_stop_name(stops_.back().name);
     stops_index_[new_stop_name] = &stops_.back();
@@ -37,11 +31,11 @@ Stop *TransportCatalogue::FindStop(std::string_view name) const
 
 void TransportCatalogue::AddBus(std::string_view name, const std::vector<std::string> &stop_names)
 {
-    std::vector<Stop *> stops_pointers;
+    std::vector<const Stop *> stops_pointers;
     stops_pointers.reserve(stop_names.size());
     for (const std::string &name : stop_names)
     {
-        Stop *stop_ptr = FindStop(name);
+        const Stop *stop_ptr = FindStop(name);
         stops_pointers.push_back(stop_ptr);
     }
 
@@ -55,7 +49,7 @@ void TransportCatalogue::AddBus(std::string_view name, const std::vector<std::st
     }
 }
 
-Bus *TransportCatalogue::FindBus(std::string_view name) const
+Bus* TransportCatalogue::FindBus(std::string_view name) const
 {
     assert(buses_index_.count(name));
     return buses_index_.at(name);
@@ -68,9 +62,9 @@ std::optional<BusInfo> TransportCatalogue::GetBusInfo(std::string_view name) con
         return {};
     }
 
-    Bus &bus_ref = *buses_index_.at(name);
+    const Bus &bus_ref = *buses_index_.at(name);
 
-    std::set<Stop *> unique_stops{bus_ref.stops.begin(), bus_ref.stops.end()};
+    std::set<const Stop *> unique_stops{bus_ref.stops.begin(), bus_ref.stops.end()};
 
     double geographic_distance = 0.0;
     double real_distance = 0.0;
@@ -97,7 +91,7 @@ std::optional<StopInfo> TransportCatalogue::GetStopInfo(std::string_view name) c
     return result;
 }
 
-void TransportCatalogue::AddDistanceBetweenStops(Stop *from, Stop *to, double distance)
+void TransportCatalogue::SetDistanceBetweenStops(const Stop *from, const Stop *to, double distance)
 {
     distances_[{from, to}] = distance;
 
@@ -107,7 +101,7 @@ void TransportCatalogue::AddDistanceBetweenStops(Stop *from, Stop *to, double di
     }
 }
 
-double TransportCatalogue::GetDistanceBetweenStops(Stop *from, Stop *to) const
+double TransportCatalogue::GetDistanceBetweenStops(const Stop *from, const Stop *to) const
 {
     assert(distances_.count({from, to}));
     return distances_.at({from, to});
