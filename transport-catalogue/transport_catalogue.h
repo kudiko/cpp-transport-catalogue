@@ -9,39 +9,13 @@
 #include <set>
 
 #include "geo.h"
+#include "domain.h"
 
 namespace TransportInformator
 {
 
 namespace Core
 {
-
-struct Stop
-{
-    std::string name;
-    detail::Coordinates coords;
-};
-
-struct Bus
-{
-    std::string name;
-    std::vector<const Stop*> stops;
-};
-
-struct BusInfo
-{
-    std::string_view name;
-    size_t stops;
-    size_t unique_stops;
-    double route_length;
-    double curvature;
-};
-
-struct StopInfo
-{
-    std::string_view name;
-    std::set<std::string_view> buses;
-};
 
 class TransportCatalogue
 {
@@ -52,7 +26,7 @@ class TransportCatalogue
 
     Stop* FindStop(std::string_view name) const;
 
-    void AddBus(std::string_view name, const std::vector<std::string>& stop_names);
+    void AddBus(std::string_view name, const std::vector<std::string>& stop_names, bool is_roundtrip);
 
     Bus* FindBus(std::string_view name) const;
 
@@ -62,6 +36,16 @@ class TransportCatalogue
     void SetDistanceBetweenStops(const Stop* from, const Stop* to, double distance);
 
     double GetDistanceBetweenStops(const Stop* from, const Stop* to) const;
+
+    std::set<std::string_view> GetAllNonEmptyBuses() const;
+    std::set<std::string_view> GetAllNonEmptyStops() const;
+
+    std::vector<detail::Coordinates> GetAllNonEmptyStopsCoords() const;
+
+    
+    std::set<std::string_view> GetBusesForStop(std::string_view stop_name) const;
+    std::vector<detail::Coordinates> GetBusStopCoordsForBus(std::string_view bus_name) const;
+    
 
     private:
     
