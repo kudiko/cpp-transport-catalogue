@@ -4,7 +4,6 @@
 #include <iostream>
 #include <set>
 #include <numeric>
-#include <cassert>
 
 namespace TransportInformator
 {
@@ -51,7 +50,6 @@ void TransportCatalogue::AddBus(std::string_view name, const std::vector<std::st
 
 Bus* TransportCatalogue::FindBus(std::string_view name) const
 {
-    assert(buses_index_.count(name));
     return buses_index_.at(name);
 }
 
@@ -122,7 +120,6 @@ void TransportCatalogue::SetDistanceBetweenStops(const Stop *from, const Stop *t
 
 double TransportCatalogue::GetDistanceBetweenStops(const Stop *from, const Stop *to) const
 {
-    assert(distances_.count({from, to}));
     return distances_.at({from, to});
 }
 

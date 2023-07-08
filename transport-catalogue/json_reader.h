@@ -141,6 +141,68 @@ namespace Input
         
         
     };
-}
 
-}
+    class InputReader
+    {
+    public:
+        InputReader(Core::TransportCatalogue &tc);
+
+        void ReadInput(std::istream &stream = std::cin);
+
+        struct AddStopCommand
+        {
+            std::string name;
+            detail::Coordinates coords;
+            std::vector<std::pair<std::string, double>> distances_to_other_stops;
+        };
+
+        struct AddBusCommand
+        {
+            std::string name;
+            std::vector<std::string> stops;
+            bool is_roundtrip;
+        };
+
+        struct DBUpdateQueue
+        {
+            std::vector<AddStopCommand> stop_commands;
+            std::vector<AddBusCommand> bus_commands;
+        };
+
+    private:
+        void ProcessCommand(std::string_view command);
+        AddStopCommand ParseStopCommand(std::stringstream& ss);
+        AddBusCommand ParseBusCommand(std::stringstream& ss);
+        
+
+        void SetDistancesToOtherStops(std::string_view start, std::vector<std::pair<std::string, double>> distances_to_other_stops);
+        
+        void DeliverCommands();
+
+        DBUpdateQueue queue_;
+        Core::TransportCatalogue &tc_;
+    };
+} // namespace TransportInformator::Input
+
+namespace Output
+{
+
+    class StatReader
+    {
+    public:
+        StatReader(const Core::TransportCatalogue &tc);
+
+        void ReadInput(std::istream &stream = std::cin, std::ostream &out = std::cout);
+
+    private:
+        void ProcessCommand(std::string_view command, std::ostream &out = std::cout);
+        void PrintBusResult(std::stringstream& ss, std::ostream &out = std::cout);
+        void PrintStopResult(std::stringstream& ss, std::ostream &out = std::cout);
+        void DeliverCommands();
+
+        const Core::TransportCatalogue &tc_;
+    };
+    
+} // namespace TransportInformator::Output
+
+} // namespace TransportInformator

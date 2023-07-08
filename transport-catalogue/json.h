@@ -24,14 +24,7 @@ public:
     using variant::variant;
     using Value = variant;
 
-    Node() = default;
-    Node(std::nullptr_t);
-    Node(int value);
-    Node(double value);
-    Node(bool value);
-    Node(Array value);
-    Node(Dict value);
-    Node(std::string value);
+    Node(Value value);
 
     bool IsInt() const;
     bool IsDouble() const;

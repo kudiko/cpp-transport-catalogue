@@ -45,14 +45,8 @@ struct BusDrawingInfo
     std::string_view name;
     std::vector<detail::Coordinates> stops_coords;
     bool is_roundtrip;
-};
-
-struct BusLabelInfo
-{
-    std::string_view bus_name;
     detail::Coordinates start_coords;
     detail::Coordinates finish_coords;
-
 };
 
 class SphereProjector {
@@ -76,9 +70,11 @@ class MapRenderer
     public:
     MapRenderer(const RenderSettings& settings, const std::vector<detail::Coordinates>& all_coords);
     void DrawBus(const BusDrawingInfo& bus_info);
-    void DrawBusLabel(const BusLabelInfo& bus_info);
+    void DrawBusLabel(const BusDrawingInfo& bus_info);
     void DrawStopSymbol(const Core::Stop* stop);
     void DrawStopLabel(const Core::Stop* stop);
+    const svg::Document& RenderMap(const std::vector<BusDrawingInfo>& bus_drawing_info, 
+    const std::vector<const Core::Stop*>& stops_to_draw );
 
     const svg::Document& GetDocument() const;
 

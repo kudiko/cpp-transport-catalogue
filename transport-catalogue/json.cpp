@@ -253,78 +253,47 @@ Node LoadNode(istream& input) {
 
 }  // namespace
 
-Node::Node(std::nullptr_t){}
-
-Node::Node(int value)
-{
-    value_ = value;
-}
-    
-Node::Node(double value)
-{
-    value_ = value;
-}
-
-Node::Node(bool value)
-{
-    value_ = value;
-}
-
-Node::Node(Array value)
-{
-    value_ = value;
-}
-
-Node::Node(Dict value)
-{
-    value_ = value;
-
-}
-
-Node::Node(std::string value)
-{
-    value_ = value;
-}
+Node::Node(Value value) : variant(std::move(value)) {}
 
 bool Node::IsInt() const
 {
-    return std::holds_alternative<int>(value_);
+    return std::holds_alternative<int>(*this);
 }
 
 bool Node::IsDouble() const
 {
-    return (std::holds_alternative<int>(value_) || 
-     std::holds_alternative<double>(value_));
+    return (std::holds_alternative<int>(*this) || 
+     std::holds_alternative<double>(*this));
 }
 
 bool Node::IsPureDouble() const
 {
-    return std::holds_alternative<double>(value_);
+    return std::holds_alternative<double>(*this);
 }
 
 bool Node::IsBool() const
 {
-    return std::holds_alternative<bool>(value_);
+    return std::holds_alternative<bool>(*this);
 }
 
 bool Node::IsString() const
 {
-    return std::holds_alternative<std::string>(value_);
+    return std::holds_alternative<std::string>(*this);
 }
 
 bool Node::IsNull() const
 {
-    return std::holds_alternative<std::nullptr_t>(value_);
+    return std::holds_alternative<std::nullptr_t>(*this);
 }
 
 bool Node::IsArray() const
 {
-    return std::holds_alternative<Array>(value_);
+    return std::holds_alternative<Array>(*this);
 }
     
 bool Node::IsMap() const
 {
-    return std::holds_alternative<Dict>(value_);
+    return std::holds_alternative<Dict>(*this);
 }
 
 int Node::AsInt() const
@@ -333,7 +302,7 @@ int Node::AsInt() const
     {
         throw std::logic_error("Stored value isn't int");
     }
-    return std::get<int>(value_);    
+    return std::get<int>(*this);    
 }
     
 bool Node::AsBool() const
@@ -342,7 +311,7 @@ bool Node::AsBool() const
     {
         throw std::logic_error("Stored value isn't bool");
     }
-    return std::get<bool>(value_);    
+    return std::get<bool>(*this);    
 }
 
 double Node::AsDouble() const
@@ -353,10 +322,10 @@ double Node::AsDouble() const
     }
     if (IsInt())
     {
-        int result = std::get<int>(value_); 
+        int result = std::get<int>(*this); 
         return result;
     } else {
-        return std::get<double>(value_);    
+        return std::get<double>(*this);    
     }
 }
 
@@ -366,7 +335,7 @@ const std::string& Node::AsString() const
     {
         throw std::logic_error("Stored value isn't string");
     }
-    return std::get<std::string>(value_);  
+    return std::get<std::string>(*this);  
 }
 
 const Array& Node::AsArray() const
@@ -375,7 +344,7 @@ const Array& Node::AsArray() const
     {
         throw std::logic_error("Stored value isn't array");
     }
-    return std::get<Array>(value_);  
+    return std::get<Array>(*this);  
 }
 
 const Dict& Node::AsMap() const
@@ -384,12 +353,12 @@ const Dict& Node::AsMap() const
     {
         throw std::logic_error("Stored value isn't map");
     }
-    return std::get<Dict>(value_);  
+    return std::get<Dict>(*this);  
 }
 
 const Node::Value& Node::GetValue() const
 {
-    return value_;
+    return *this;
 }
 
 Document::Document(Node root)

@@ -124,13 +124,13 @@ namespace TransportInformator
             MoveCurrentBusColor();
         }
 
-        void MapRenderer::DrawBusLabel(const BusLabelInfo& bus_info)
+        void MapRenderer::DrawBusLabel(const BusDrawingInfo& bus_info)
         {
             svg::Text start_label;
 
             start_label.SetPosition(projector_(bus_info.start_coords)).SetOffset({settings_.bus_label_offset[0], settings_.bus_label_offset[1]});
             start_label.SetFontSize(settings_.bus_label_font_size).SetFontFamily("Verdana").SetFontWeight("bold");
-            start_label.SetData(static_cast<std::string>(bus_info.bus_name));
+            start_label.SetData(static_cast<std::string>(bus_info.name));
 
             svg::Text start_label_underlayer = start_label;
 
@@ -138,7 +138,7 @@ namespace TransportInformator
             start_label_underlayer.SetStrokeWidth(settings_.underlayer_width);
             start_label_underlayer.SetStrokeLineCap(svg::StrokeLineCap::ROUND).SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
 
-            start_label.SetFillColor(bus_to_color_.at(bus_info.bus_name));
+            start_label.SetFillColor(bus_to_color_.at(bus_info.name));
 
             // подложку рисуем сначала
             doc_.Add(start_label_underlayer);
@@ -150,7 +150,7 @@ namespace TransportInformator
 
                 finish_label.SetPosition(projector_(bus_info.finish_coords)).SetOffset({settings_.bus_label_offset[0], settings_.bus_label_offset[1]});
                 finish_label.SetFontSize(settings_.bus_label_font_size).SetFontFamily("Verdana").SetFontWeight("bold");
-                finish_label.SetData(static_cast<std::string>(bus_info.bus_name));
+                finish_label.SetData(static_cast<std::string>(bus_info.name));
 
                 svg::Text finish_label_underlayer = finish_label;
 
@@ -158,7 +158,7 @@ namespace TransportInformator
                 finish_label_underlayer.SetStrokeWidth(settings_.underlayer_width);
                 finish_label_underlayer.SetStrokeLineCap(svg::StrokeLineCap::ROUND).SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
 
-                finish_label.SetFillColor(bus_to_color_.at(bus_info.bus_name));
+                finish_label.SetFillColor(bus_to_color_.at(bus_info.name));
 
                 doc_.Add(finish_label_underlayer);
                 doc_.Add(finish_label);
@@ -206,6 +206,32 @@ namespace TransportInformator
         
         const svg::Document& MapRenderer::GetDocument() const
         {
+            return doc_;
+        }
+
+        const svg::Document& MapRenderer::RenderMap(const std::vector<BusDrawingInfo>& bus_drawing_info, 
+        const std::vector<const Core::Stop*>& stops_to_draw)
+        {
+            for (const auto& bus_info : bus_drawing_info)
+            {
+                DrawBus(bus_info);
+            }
+
+            for (const auto& bus_info : bus_drawing_info)
+            {
+                DrawBusLabel(bus_info);
+            }
+
+            for (const auto stop_ptr : stops_to_draw)
+            {
+                DrawStopSymbol(stop_ptr);
+            }
+
+            for (const auto& stop_ptr : stops_to_draw)
+            {
+                DrawStopLabel(stop_ptr);
+            }
+
             return doc_;
         }
 

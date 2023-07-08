@@ -22,8 +22,8 @@ int main() {
 
     jsonreader.SendStatRequests(handler);
 
-   // const svg::Document& result = handler.RenderMap();
-  //  result.Render(std::cout);
+    //const svg::Document& result = handler.RenderMap();
+    //result.Render(std::cout);
     
     /*
     json::Document right_answer = json::Load(std::cin);
