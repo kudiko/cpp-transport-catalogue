@@ -3,6 +3,7 @@
 #include "json.h"
 #include "transport_catalogue.h"
 #include "request_handler.h"
+#include "json_builder.h"
 
 
 /*
@@ -64,7 +65,7 @@ namespace Input
         StatRequestType type;
 
         virtual ~StatRequest() = default;
-        virtual void Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) = 0;
+        virtual json::Node Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) = 0;
         
     };
 
@@ -72,20 +73,20 @@ namespace Input
     {
         BusInfoRequest(size_t new_id, StatRequestType new_type, std::string new_name);
         std::string name;
-        void Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
+        json::Node Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
     };
 
     struct StopInfoRequest : public StatRequest
     {
         StopInfoRequest(size_t new_id, StatRequestType new_type, std::string new_name);
         std::string name;
-        void Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
+        json::Node Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
     };
     
     struct MapRenderRequest : public StatRequest
     {
         MapRenderRequest(size_t new_id, StatRequestType new_type);
-        void Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
+        json::Node Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
     };
 
     struct DBCommands
@@ -104,7 +105,7 @@ namespace Input
         public:
         JSONReader(Core::TransportCatalogue& tc, std::istream& in);
         void ReadJSON();
-        void Print(std::ostream& out);
+        void Print(std::ostream &out, json::Document doc_to_print);
         Render::RenderSettings GetRenderSettings() const;
         void SendStatRequests(ReqHandler::RequestHandler& rh);
 
@@ -132,7 +133,7 @@ namespace Input
         svg::Color ParseColorFromJSON(const json::Node& node) const;
 
         std::vector<std::unique_ptr<StatRequest>> stat_requests_;
-        std::vector<json::Node> db_answers_;
+        //std::vector<json::Node> db_answers_;
 
         DBCommands commands_;
 

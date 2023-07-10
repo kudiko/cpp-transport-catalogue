@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <iomanip>
 #include "map_renderer.h"
+#include "json_builder.h"
 /*
  * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
  * а также код обработки запросов к базе и формирование массива ответов в формате JSON
@@ -26,32 +27,43 @@ namespace TransportInformator
         StopInfoRequest::StopInfoRequest(size_t new_id, StatRequestType new_type, std::string new_name) : StatRequest{new_id, new_type}, name{new_name} {}
         MapRenderRequest::MapRenderRequest(size_t new_id, StatRequestType new_type) : StatRequest{new_id, new_type} {}
 
-        void BusInfoRequest::Process(JSONReader &jreader, [[maybe_unused]] ReqHandler::RequestHandler &rh)
+        json::Node BusInfoRequest::Process(JSONReader &jreader, [[maybe_unused]] ReqHandler::RequestHandler &rh)
         {
             using namespace std::literals;
             auto info = jreader.tc_.GetBusInfo(name);
+
             if (!info.has_value())
             {
-                json::Dict dict{{"request_id", json::Node{static_cast<int>(id)}}, {"error_message", {"not found"s}}};
-
-                jreader.db_answers_.push_back(std::move(json::Node{dict}));
-                return;
+                return json::Builder{}
+                .StartDict()
+                    .Key("request_id").Value(static_cast<int>(id))
+                    .Key("error_message").Value("not found"s)
+                .EndDict()
+                .Build();
             }
 
-            json::Dict dict{{"request_id", json::Node{static_cast<int>(id)}}, {"route_length", {info->route_length}}, {"curvature", {info->curvature}}, {"stop_count", {static_cast<int>(info->stops)}}, {"unique_stop_count", {static_cast<int>(info->unique_stops)}}};
-            jreader.db_answers_.push_back(std::move(json::Node{dict}));
+            return json::Builder{}.StartDict()
+                .Key("request_id").Value(static_cast<int>(id))
+                .Key("route_length").Value(info->route_length)
+                .Key("curvature").Value(info->curvature)
+                .Key("stop_count").Value(static_cast<int>(info->stops))
+                .Key("unique_stop_count").Value(static_cast<int>(info->unique_stops))
+            .EndDict()
+            .Build();
         }
 
-        void StopInfoRequest::Process(JSONReader &jreader, [[maybe_unused]] ReqHandler::RequestHandler &rh)
+        json::Node StopInfoRequest::Process(JSONReader &jreader, [[maybe_unused]] ReqHandler::RequestHandler &rh)
         {
             using namespace std::literals;
             auto info = jreader.tc_.GetStopInfo(name);
             if (!info.has_value())
             {
-                json::Dict dict{{"request_id", json::Node{static_cast<int>(id)}}, {"error_message", {"not found"s}}};
-
-                jreader.db_answers_.push_back(std::move(json::Node{dict}));
-                return;
+                return json::Builder{}
+                .StartDict()
+                    .Key("request_id").Value(static_cast<int>(id))
+                    .Key("error_message").Value("not found"s)
+                .EndDict()
+                .Build();
             }
 
             json::Array arr;
@@ -60,26 +72,32 @@ namespace TransportInformator
                 arr.push_back({static_cast<std::string>(bus_stop)});
             }
 
-            json::Dict dict{{"request_id", json::Node{static_cast<int>(id)}}, {"buses", {arr}}};
-
-            jreader.db_answers_.push_back(std::move(json::Node{dict}));
+            return json::Builder{}
+            .StartDict()
+                .Key("request_id").Value(static_cast<int>(id))
+                .Key("buses").Value(arr)
+            .EndDict()
+            .Build();
         }
 
-        void MapRenderRequest::Process(JSONReader &jreader, ReqHandler::RequestHandler &rh)
+        json::Node MapRenderRequest::Process([[maybe_unused]] JSONReader &jreader, ReqHandler::RequestHandler &rh)
         {
             std::stringstream ss;
             rh.RenderMap().Render(ss);
 
-            json::Dict dict{{"request_id", json::Node{static_cast<int>(id)}}, {"map", {ss.str()}}};
-            jreader.db_answers_.push_back(std::move(json::Node{dict}));
+            return json::Builder{}
+            .StartDict()
+                .Key("request_id").Value(static_cast<int>(id))
+                .Key("map").Value(ss.str())
+            .EndDict()
+            .Build();
         }
 
         JSONReader::JSONReader(Core::TransportCatalogue &tc, std::istream &in) : tc_{tc}, in_{in} {}
 
-        void JSONReader::Print(std::ostream &out)
+        void JSONReader::Print(std::ostream &out, json::Document doc_to_print)
         {
-            json::Document out_doc{json::Node{db_answers_}};
-            json::Print(out_doc, out);
+            json::Print(doc_to_print, out);
         }
 
         void JSONReader::SendBaseRequests()
@@ -102,22 +120,27 @@ namespace TransportInformator
 
         void JSONReader::SendStatRequests(ReqHandler::RequestHandler &rh)
         {
+            json::Builder builder{};
+            builder.StartArray();
+
             for (const auto &req : stat_requests_)
             {
-                req->Process(*this, rh);
+                builder.Value(req->Process(*this, rh).AsDict()); 
             }
+            
+            builder.EndArray();
 
-            Print(std::cout);
+            Print(std::cout, json::Document{builder.Build()});
         }
 
         void JSONReader::ReadJSON()
         {
             json::Node root_node = json::Load(in_).GetRoot();
-            if (!root_node.IsMap())
+            if (!root_node.IsDict())
             {
                 throw std::invalid_argument("Parent node of JSON is not map");
             }
-            json::Dict map = root_node.AsMap();
+            json::Dict map = root_node.AsDict();
 
             if (!map.count("base_requests"))
             {
@@ -135,11 +158,11 @@ namespace TransportInformator
             {
                 throw std::invalid_argument("There is no key \"render_settings\" in JSON");
             }
-            if (!map.at("render_settings").IsMap())
+            if (!map.at("render_settings").IsDict())
             {
                 throw std::invalid_argument("Key \"render_settings\" is not map in JSON");
             }
-            json::Dict render_settings = map.at("render_settings").AsMap();
+            json::Dict render_settings = map.at("render_settings").AsDict();
             ProcessRenderSettings(render_settings);
 
             if (!map.count("stat_requests"))
@@ -158,11 +181,11 @@ namespace TransportInformator
         {
             for (const auto &command : arr)
             {
-                if (!command.IsMap())
+                if (!command.IsDict())
                 {
                     throw std::invalid_argument("Base request in JSON is not map");
                 }
-                json::Dict current_command = command.AsMap();
+                json::Dict current_command = command.AsDict();
                 if (current_command.at("type").AsString() == "Stop")
                 {
                     ProcessAddStop(current_command);
@@ -182,11 +205,11 @@ namespace TransportInformator
         {
             for (const auto &command : arr)
             {
-                if (!command.IsMap())
+                if (!command.IsDict())
                 {
                     throw std::invalid_argument("Stat request in JSON is not map");
                 }
-                json::Dict current_request = command.AsMap();
+                json::Dict current_request = command.AsDict();
                 if (current_request.at("type").AsString() == "Stop")
                 {
                     StopInfoRequest stop_info_r{static_cast<size_t>(current_request.at("id").AsInt()),
@@ -214,11 +237,11 @@ namespace TransportInformator
         void JSONReader::ProcessAddStop(const json::Dict &add_stop_command)
         {
             std::vector<std::pair<std::string, double>> distances_to_other_stops;
-            if (!add_stop_command.at("road_distances").IsMap())
+            if (!add_stop_command.at("road_distances").IsDict())
             {
                 throw std::invalid_argument("Add stop request is not map");
             }
-            json::Dict distances = add_stop_command.at("road_distances").AsMap();
+            json::Dict distances = add_stop_command.at("road_distances").AsDict();
             for (const auto &[other_stop, distance] : distances)
             {
                 distances_to_other_stops.push_back({other_stop, distance.AsDouble()});
