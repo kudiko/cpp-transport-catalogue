@@ -3,58 +3,46 @@
 #include <string>
 #include <map>
 
-
 namespace json
 {
-    Context::Context(Builder& builder) : builder_{builder}{}
+    Builder::Context::Context(Builder &builder) : builder_{builder} {}
 
-    ArrayItemContext::ArrayItemContext(Builder& builder) : Context{builder}{}
-
-    ArrayItemContext ArrayItemContext::Value(Node::Value value)
+    Builder::ArrayItemContext Builder::Context::Value(Node::Value value)
     {
         return {builder_.Value(value)};
     }
-    ArrayItemContext ArrayItemContext::StartArray()
+    Builder::ArrayItemContext Builder::Context::StartArray()
     {
         return {builder_.StartArray()};
     }
-    DictItemContext ArrayItemContext::StartDict()
+    Builder::DictItemContext Builder::Context::StartDict()
     {
         return {builder_.StartDict()};
     }
-    Builder& ArrayItemContext::EndArray()
+    Builder &Builder::Context::EndArray()
     {
         builder_.EndArray();
         return builder_;
     }
 
-    DictItemContext::DictItemContext(Builder& builder) : Context{builder}{}
-
-    DictKeyContext DictItemContext::Key(std::string key)
+    Builder::DictKeyContext Builder::Context::Key(std::string key)
     {
         return builder_.Key(std::move(key));
     }
-    Builder& DictItemContext::EndDict()
+    Builder &Builder::Context::EndDict()
     {
         builder_.EndDict();
         return builder_;
     }
 
-    DictKeyContext::DictKeyContext(Builder& builder) : Context{builder}{}
-
-    DictItemContext DictKeyContext::Value(Node::Value value)
+    Builder::DictItemContext Builder::Context::ValueInDictItem(Node::Value value)
     {
         return {builder_.Value(value)};
     }
 
-    ArrayItemContext DictKeyContext::StartArray()
-    {
-        return {builder_.StartArray()};
-    }
-    DictItemContext DictKeyContext::StartDict()
-    {
-        return {builder_.StartDict()};
-    }
+    Builder::ArrayItemContext::ArrayItemContext(Builder &builder) : Context{builder} {}
+    Builder::DictItemContext::DictItemContext(Builder &builder) : Context{builder} {}
+    Builder::DictKeyContext::DictKeyContext(Builder &builder) : Context{builder} {}
 
     Builder::Builder()
     {
@@ -63,15 +51,14 @@ namespace json
 
     Node Builder::Build()
     {
-        if (!(nodes_stack_.back() == &root_) || (root_.IsNull()) )
+        if (!(nodes_stack_.back() == &root_) || (root_.IsNull()))
         {
             throw std::logic_error("Can't build: context not complete or file is empty");
         }
         return root_;
-
     }
 
-    DictItemContext Builder::StartDict()
+    Builder::DictItemContext Builder::StartDict()
     {
         if (IsReadyCheck())
         {
@@ -79,13 +66,13 @@ namespace json
         }
         CheckCorrectValuePlacing("StartDict command not after key or not inside in array or not after the constructor");
         Dict new_map;
-        Node* dict_ptr = new Node(new_map);
+        Node *dict_ptr = new Node(new_map);
         nodes_stack_.push_back(dict_ptr);
 
         return {*this};
     }
 
-    Builder& Builder::EndDict()
+    Builder &Builder::EndDict()
     {
         if (IsReadyCheck())
         {
@@ -95,14 +82,14 @@ namespace json
         {
             throw std::logic_error("EndDict command in a wrong place");
         }
-        Node* complete_dict_node = nodes_stack_.back();
+        Node *complete_dict_node = nodes_stack_.back();
         nodes_stack_.pop_back();
         Value(complete_dict_node->AsDict());
 
         return *this;
     }
 
-    ArrayItemContext Builder::StartArray()
+    Builder::ArrayItemContext Builder::StartArray()
     {
         if (IsReadyCheck())
         {
@@ -110,13 +97,13 @@ namespace json
         }
         CheckCorrectValuePlacing("StartArray command not after key or not inside in array or not after the constructor");
         Array new_array;
-        Node* arr_ptr = new Node(new_array);
+        Node *arr_ptr = new Node(new_array);
         nodes_stack_.push_back(arr_ptr);
 
         return {*this};
     }
 
-    Builder& Builder::EndArray()
+    Builder &Builder::EndArray()
     {
         if (IsReadyCheck())
         {
@@ -126,14 +113,14 @@ namespace json
         {
             throw std::logic_error("EndArray command in a wrong place");
         }
-        Node* complete_arr_node = nodes_stack_.back();
+        Node *complete_arr_node = nodes_stack_.back();
         nodes_stack_.pop_back();
         Value(complete_arr_node->AsArray());
 
         return *this;
     }
 
-    DictKeyContext Builder::Key(std::string key)
+    Builder::DictKeyContext Builder::Key(std::string key)
     {
         if (IsReadyCheck())
         {
@@ -143,40 +130,43 @@ namespace json
         {
             throw std::logic_error("Key command not inside dict or after another key command");
         }
-        Node* key_ptr = new Node(key);
+        Node *key_ptr = new Node(key);
         nodes_stack_.push_back(key_ptr);
 
         return {*this};
     }
 
-    Builder& Builder::Value(Node::Value value)
+    Builder &Builder::Value(Node::Value value)
     {
         if (IsReadyCheck())
         {
             throw std::logic_error("Trying to call Value method for complete object");
         }
         CheckCorrectValuePlacing("Value command not after key or not inside in array or not after the constructor");
-        Node* stack_frame = nodes_stack_.back();
+        Node *stack_frame = nodes_stack_.back();
         if (stack_frame->IsString())
         {
             std::string key = stack_frame->AsString();
             nodes_stack_.pop_back();
-            Dict& dict = std::get<Dict>(nodes_stack_.back()->GetValue());
+            Dict &dict = std::get<Dict>(nodes_stack_.back()->GetValue());
             dict[key] = Node(value);
-        } else if (stack_frame->IsArray()){
-            Array& array = std::get<Array>(stack_frame->GetValue());
+        }
+        else if (stack_frame->IsArray())
+        {
+            Array &array = std::get<Array>(stack_frame->GetValue());
             array.push_back(Node(value));
-        } else if (stack_frame == &root_){
+        }
+        else if (stack_frame == &root_)
+        {
             root_ = Node(value);
         }
-        
 
         return *this;
     }
 
-    void Builder::CheckCorrectValuePlacing(const std::string& err_msg)
+    void Builder::CheckCorrectValuePlacing(const std::string &err_msg)
     {
-        Node* stack_frame = nodes_stack_.back();
+        Node *stack_frame = nodes_stack_.back();
         if (!(stack_frame->IsString()) && !(stack_frame->IsArray()) && !(stack_frame == &root_))
         {
             throw std::logic_error(err_msg);
@@ -204,7 +194,7 @@ namespace json
         } else if (parent_node->IsString())
         {
             Dict& dict = std::get<Dict>(parent_node->GetValue());
-            dict 
+            dict
         }
     }*/
 }

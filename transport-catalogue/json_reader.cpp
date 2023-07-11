@@ -36,18 +36,18 @@ namespace TransportInformator
             {
                 return json::Builder{}
                 .StartDict()
-                    .Key("request_id").Value(static_cast<int>(id))
-                    .Key("error_message").Value("not found"s)
+                    .Key("request_id").ValueInDictItem(static_cast<int>(id))
+                    .Key("error_message").ValueInDictItem("not found"s)
                 .EndDict()
                 .Build();
             }
 
             return json::Builder{}.StartDict()
-                .Key("request_id").Value(static_cast<int>(id))
-                .Key("route_length").Value(info->route_length)
-                .Key("curvature").Value(info->curvature)
-                .Key("stop_count").Value(static_cast<int>(info->stops))
-                .Key("unique_stop_count").Value(static_cast<int>(info->unique_stops))
+                .Key("request_id").ValueInDictItem(static_cast<int>(id))
+                .Key("route_length").ValueInDictItem(info->route_length)
+                .Key("curvature").ValueInDictItem(info->curvature)
+                .Key("stop_count").ValueInDictItem(static_cast<int>(info->stops))
+                .Key("unique_stop_count").ValueInDictItem(static_cast<int>(info->unique_stops))
             .EndDict()
             .Build();
         }
@@ -60,8 +60,8 @@ namespace TransportInformator
             {
                 return json::Builder{}
                 .StartDict()
-                    .Key("request_id").Value(static_cast<int>(id))
-                    .Key("error_message").Value("not found"s)
+                    .Key("request_id").ValueInDictItem(static_cast<int>(id))
+                    .Key("error_message").ValueInDictItem("not found"s)
                 .EndDict()
                 .Build();
             }
@@ -74,8 +74,8 @@ namespace TransportInformator
 
             return json::Builder{}
             .StartDict()
-                .Key("request_id").Value(static_cast<int>(id))
-                .Key("buses").Value(arr)
+                .Key("request_id").ValueInDictItem(static_cast<int>(id))
+                .Key("buses").ValueInDictItem(arr)
             .EndDict()
             .Build();
         }
@@ -87,8 +87,8 @@ namespace TransportInformator
 
             return json::Builder{}
             .StartDict()
-                .Key("request_id").Value(static_cast<int>(id))
-                .Key("map").Value(ss.str())
+                .Key("request_id").ValueInDictItem(static_cast<int>(id))
+                .Key("map").ValueInDictItem(ss.str())
             .EndDict()
             .Build();
         }
