@@ -18,6 +18,7 @@
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 #include "domain.h"
+#include "transport_router.h"
 
 #include <iostream>
 #include <sstream>
@@ -31,7 +32,7 @@ namespace ReqHandler
     class RequestHandler {
         public:
             // MapRenderer понадобится в следующей части итогового проекта
-            RequestHandler(const Core::TransportCatalogue& db, Render::MapRenderer& renderer);
+            RequestHandler(const Core::TransportCatalogue& db, Render::MapRenderer& renderer, Router::TransportRouter& router);
 
             // Возвращает информацию о маршруте (запрос Bus)
             std::optional<Core::BusInfo> GetBusStat(const std::string_view& bus_name) const;
@@ -42,11 +43,14 @@ namespace ReqHandler
             // Этот метод будет нужен в следующей части итогового проекта
             const svg::Document& RenderMap();
 
+            Router::Route BuildRoute(std::string_view from, std::string_view to) const;
+
         private:
             // RequestHandler использует агрегацию объектов "Транспортный Справочник" и "Визуализатор Карты"
 
             const Core::TransportCatalogue& db_;
             Render::MapRenderer& renderer_;
+            Router::TransportRouter& router_;
     };
 
 

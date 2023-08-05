@@ -174,6 +174,16 @@ std::set<std::string_view> TransportCatalogue::GetAllNonEmptyStops() const
     return result;
 }
 
+std::set<std::string_view> TransportCatalogue::GetAllStops() const
+{
+    std::set<std::string_view> result;
+    for (const auto& [stop_name, stop_ptr] : stops_index_)
+    {
+        result.insert(stop_name);
+    }
+    return result;
+}
+
 std::vector<detail::Coordinates> TransportCatalogue::GetAllNonEmptyStopsCoords() const
 {
     std::vector<detail::Coordinates> result;

@@ -17,8 +17,9 @@ int main() {
     TransportInformator::Core::TransportCatalogue tc;
     TransportInformator::Input::JSONReader jsonreader{tc, std::cin};
     jsonreader.ReadJSON();
+    TransportInformator::Router::TransportRouter router(tc, jsonreader.GetRouterSettings());
     TransportInformator::Render::MapRenderer renderer(jsonreader.GetRenderSettings(), tc.GetAllNonEmptyStopsCoords());
-    TransportInformator::ReqHandler::RequestHandler handler(tc, renderer);
+    TransportInformator::ReqHandler::RequestHandler handler(tc, renderer, router);
 
     jsonreader.SendStatRequests(handler);
 

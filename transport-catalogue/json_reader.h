@@ -19,7 +19,7 @@ namespace Input
     enum class BaseRequestType
     {
         BUS,
-        STOP
+        STOP,
     };
 
     //Requests forming the database
@@ -53,6 +53,7 @@ namespace Input
         BUS,
         STOP,
         MAP,
+        ROUTE
     };
 
     class JSONReader;
@@ -89,6 +90,14 @@ namespace Input
         json::Node Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
     };
 
+    struct RouteRequest : public StatRequest
+    {
+        RouteRequest(size_t new_id, StatRequestType new_type, std::string name_from, std::string name_to);
+        std::string from;
+        std::string to;
+        json::Node Process(JSONReader& jreader, ReqHandler::RequestHandler& rh) override;
+    };
+
     struct DBCommands
     {
         struct BaseRequests
@@ -107,6 +116,7 @@ namespace Input
         void ReadJSON();
         void Print(std::ostream &out, json::Document doc_to_print);
         Render::RenderSettings GetRenderSettings() const;
+        Router::TransportRouterParameters GetRouterSettings() const;
         void SendStatRequests(ReqHandler::RequestHandler& rh);
 
         private:
@@ -139,6 +149,8 @@ namespace Input
 
         Render::RenderSettings render_settings_;
 
+        void ProcessRouterSettings(const json::Dict& router_settings);
+        Router::TransportRouterParameters router_settings_;
         
         
     };

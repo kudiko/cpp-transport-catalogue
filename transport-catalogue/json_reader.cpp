@@ -26,6 +26,9 @@ namespace TransportInformator
         BusInfoRequest::BusInfoRequest(size_t new_id, StatRequestType new_type, std::string new_name) : StatRequest{new_id, new_type}, name{new_name} {}
         StopInfoRequest::StopInfoRequest(size_t new_id, StatRequestType new_type, std::string new_name) : StatRequest{new_id, new_type}, name{new_name} {}
         MapRenderRequest::MapRenderRequest(size_t new_id, StatRequestType new_type) : StatRequest{new_id, new_type} {}
+        RouteRequest::RouteRequest(size_t new_id, StatRequestType new_type, std::string name_from, std::string name_to) :
+        StatRequest{new_id, new_type}, from{move(name_from)}, to{move(name_to)} {}
+
 
         json::Node BusInfoRequest::Process(JSONReader &jreader, [[maybe_unused]] ReqHandler::RequestHandler &rh)
         {
@@ -91,6 +94,56 @@ namespace TransportInformator
                 .Key("map").ValueInDictItem(ss.str())
             .EndDict()
             .Build();
+        }
+
+        json::Node RouteRequest::Process([[maybe_unused]] JSONReader& jreader, ReqHandler::RequestHandler& rh)
+        {
+            using namespace std::literals;
+
+            Router::Route built_route = rh.BuildRoute(from, to);
+            if (built_route.route_details.empty() && built_route.total_time < 0)
+            {
+                return json::Builder{}
+                .StartDict()
+                    .Key("request_id").ValueInDictItem(static_cast<int>(id))
+                    .Key("error_message").ValueInDictItem("not found"s)
+                .EndDict()
+                .Build();
+            }
+
+            json::Array items_arr;
+            for (const auto& route_element : built_route.route_details)
+            {
+                if (std::holds_alternative<Router::Route::RouteElementWait>(route_element))
+                {
+                    json::Node wait_node = json::Builder{}
+                    .StartDict()
+                        .Key("type").ValueInDictItem("Wait"s)
+                        .Key("stop_name").ValueInDictItem(std::get<Router::Route::RouteElementWait>(route_element).stop_name)
+                        .Key("time").ValueInDictItem(std::get<Router::Route::RouteElementWait>(route_element).time)
+                    .EndDict()
+                    .Build();
+                    items_arr.push_back(wait_node);
+                    continue;
+                }
+                json::Node bus_node = json::Builder{}
+                    .StartDict()
+                        .Key("type").ValueInDictItem("Bus"s)
+                        .Key("bus").ValueInDictItem(std::get<Router::Route::RouteElementBus>(route_element).bus)
+                        .Key("span_count").ValueInDictItem(std::get<Router::Route::RouteElementBus>(route_element).span_count)
+                        .Key("time").ValueInDictItem(std::get<Router::Route::RouteElementBus>(route_element).time)
+                    .EndDict()
+                    .Build();
+                items_arr.push_back(bus_node);
+            }
+
+            return json::Builder{}
+                .StartDict()
+                    .Key("request_id").ValueInDictItem(static_cast<int>(id))
+                    .Key("total_time").ValueInDictItem(built_route.total_time)
+                    .Key("items").ValueInDictItem(items_arr)
+                .EndDict()
+                .Build();
         }
 
         JSONReader::JSONReader(Core::TransportCatalogue &tc, std::istream &in) : tc_{tc}, in_{in} {}
@@ -165,6 +218,17 @@ namespace TransportInformator
             json::Dict render_settings = map.at("render_settings").AsDict();
             ProcessRenderSettings(render_settings);
 
+            if (!map.count("routing_settings"))
+            {
+                throw std::invalid_argument("There is no key \"routing_settings\" in JSON");
+            }
+            if (!map.at("routing_settings").IsDict())
+            {
+                throw std::invalid_argument("Key \"routing_settings\" is not map in JSON");
+            }
+            json::Dict router_settings = map.at("routing_settings").AsDict();
+            ProcessRouterSettings(router_settings);
+
             if (!map.count("stat_requests"))
             {
                 throw std::invalid_argument("There is no key \"stat_requests\" in JSON");
@@ -226,6 +290,12 @@ namespace TransportInformator
                 {
                     MapRenderRequest map_render_r{static_cast<size_t>(current_request.at("id").AsInt()), StatRequestType::MAP};
                     stat_requests_.push_back(std::make_unique<MapRenderRequest>(map_render_r));
+                }
+                else if (current_request.at("type").AsString() == "Route")
+                {
+                    RouteRequest route_r{static_cast<size_t>(current_request.at("id").AsInt()), StatRequestType::ROUTE, 
+                    current_request.at("from").AsString(), current_request.at("to").AsString()};
+                    stat_requests_.push_back(std::make_unique<RouteRequest>(route_r));
                 }
                 else
                 {
@@ -310,6 +380,12 @@ namespace TransportInformator
             }
         }
 
+        void JSONReader::ProcessRouterSettings(const json::Dict& dict)
+        {
+            router_settings_.SetBusWaitTime(dict.at("bus_wait_time").AsInt());
+            router_settings_.SetBusVelocity(dict.at("bus_velocity").AsDouble());
+        }
+
         svg::Color JSONReader::ParseColorFromJSON(const json::Node &node) const
         {
             if (node.IsString())
@@ -340,6 +416,10 @@ namespace TransportInformator
         Render::RenderSettings JSONReader::GetRenderSettings() const
         {
             return render_settings_;
+        }
+        Router::TransportRouterParameters JSONReader::GetRouterSettings() const
+        {
+            return router_settings_;
         }
 
         InputReader::InputReader(Core::TransportCatalogue &tc) : tc_(tc) {}

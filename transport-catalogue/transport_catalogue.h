@@ -39,6 +39,7 @@ class TransportCatalogue
 
     std::set<std::string_view> GetAllNonEmptyBuses() const;
     std::set<std::string_view> GetAllNonEmptyStops() const;
+    std::set<std::string_view> GetAllStops() const;
 
     std::vector<detail::Coordinates> GetAllNonEmptyStopsCoords() const;
 
