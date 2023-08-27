@@ -1,5 +1,4 @@
 #include "svg.h"
-
 #include <sstream>
 
 namespace svg

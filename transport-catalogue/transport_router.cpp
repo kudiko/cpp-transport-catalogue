@@ -21,7 +21,32 @@ bus_wait_time_{pars.bus_wait_time}, bus_velocity_{pars.bus_velocity}, tc_{tc}, g
 
         vertice_id += 2;
     }
+
+    BuildGraph();
+    InitRouter();
 }
+
+    TransportRouter::TransportRouter(const Core::TransportCatalogue& tc, TransportRouterParameters pars,
+                                     const graph::DirectedWeightedGraph<double>& graph,
+                                     const graph::Router<double>& router,
+                                     std::unordered_map<size_t, std::string> edge_id_to_bus_name,
+                                     std::unordered_map<size_t, int> edge_id_to_span_count) :
+                    bus_wait_time_{pars.bus_wait_time}, bus_velocity_{pars.bus_velocity}, tc_{tc},
+                    graph_{graph}, router_{router}, edge_id_to_bus_name_(std::move(edge_id_to_bus_name)),
+                    edge_id_to_span_count_(std::move(edge_id_to_span_count))
+    {
+        const std::set<std::string_view> all_stops = tc_.GetAllStops();
+        size_t vertice_id = 0;
+        for (const auto stop_name : all_stops)
+        {
+            vertice_id_to_stop_name_[vertice_id] = stop_name;
+            vertice_id_to_stop_name_[vertice_id + 1] = stop_name;
+
+            stop_name_to_vertice_ids_[stop_name] = {vertice_id, vertice_id + 1};
+
+            vertice_id += 2;
+        }
+    }
 
 void TransportRouter::BuildGraph()
 {
@@ -53,21 +78,11 @@ void TransportRouter::BuildGraph()
     }
 }
 
-bool TransportRouter::GraphHasValue() const
-{
-    return graph_.has_value();
-}
-
-bool TransportRouter::RouterHasValue() const
-{
-    return router_.has_value();
-}
-
 void TransportRouter::InitRouter()
 {
     router_.emplace(graph_.value());
 }
-Route TransportRouter::BuildRoute(std::string_view from, std::string_view to) const
+    std::optional<Route> TransportRouter::BuildRoute(std::string_view from, std::string_view to) const
 {
     const size_t from_id = stop_name_to_vertice_ids_.at(from).enter_bus_vertex;
     const size_t to_id = stop_name_to_vertice_ids_.at(to).enter_bus_vertex;
@@ -76,7 +91,7 @@ Route TransportRouter::BuildRoute(std::string_view from, std::string_view to) co
 
     if (!BuildRouteResult.has_value())
     {
-        return {};
+        return std::nullopt;
     }
 
     return ProcessRouteInfo(BuildRouteResult.value());
@@ -115,7 +130,7 @@ Route TransportRouter::ProcessRouteInfo(const graph::Router<double>::RouteInfo& 
         auto to_it = std::find(from_it, bus_ptr->stops.end(), to_ptr);
         */
 
-        int span_count = edge_td_to_span_count_.at(*it);
+        int span_count = edge_id_to_span_count_.at(*it);
             
         result.emplace_back(Route::RouteElementBus{static_cast<std::string>(bus_name), span_count, time});
     }
@@ -125,30 +140,31 @@ Route TransportRouter::ProcessRouteInfo(const graph::Router<double>::RouteInfo& 
 
 
 template <class InputIt>
-void TransportRouter::MakeEdgesForBus(InputIt stops_begin, InputIt stops_end, std::string_view bus_name)
-{
-    for (auto outer_it = stops_begin; outer_it != stops_end; ++outer_it)
-    {
+void TransportRouter::MakeEdgesForBus(InputIt stops_begin, InputIt stops_end, std::string_view bus_name) {
+    for (auto outer_it = stops_begin; outer_it != stops_end; ++outer_it) {
         double time_from_start = 0.;
         int span_count = 0;
-        for (auto it = std::next(outer_it, 1); it != stops_end; ++it)
-        {
+        for (auto it = std::next(outer_it, 1); it != stops_end; ++it) {
             std::string_view stop_name_from((*outer_it)->name);
             std::string_view stop_name_to((*it)->name);
 
             size_t leave_vertex_id = stop_name_to_vertice_ids_.at(stop_name_from).leave_bus_vertex;
             size_t enter_vertex_id = stop_name_to_vertice_ids_.at(stop_name_to).enter_bus_vertex;
 
-            double time_of_ride_between_stops = tc_.GetDistanceBetweenStops(*std::next(it, -1), *it) / (bus_velocity_ / 3600 * 1000) / 60; // last division is conversion to minutes
+            double time_of_ride_between_stops =
+                    tc_.GetDistanceBetweenStops(*std::next(it, -1), *it) / (bus_velocity_ / 3600 * 1000) /
+                    60; // last division is conversion to minutes
             time_from_start += time_of_ride_between_stops;
 
             size_t new_bus_edge = graph_.value().AddEdge({leave_vertex_id, enter_vertex_id, time_from_start});
-            edge_td_to_span_count_[new_bus_edge] = ++span_count;
+            edge_id_to_span_count_[new_bus_edge] = ++span_count;
             edge_id_to_bus_name_[new_bus_edge] = bus_name;
         }
     }
 
 }
+
+
 
 } // namespace Router
 

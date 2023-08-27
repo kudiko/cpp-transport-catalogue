@@ -22,7 +22,7 @@ namespace TransportInformator
     {
 
         // MapRenderer понадобится в следующей части итогового проекта
-        RequestHandler::RequestHandler(const Core::TransportCatalogue& db, Render::MapRenderer& renderer, Router::TransportRouter& router) 
+        RequestHandler::RequestHandler(Core::TransportCatalogue& db, Render::MapRenderer& renderer, Router::TransportRouter& router)
         : db_{db}, renderer_{renderer}, router_{router}{}
 
         // Возвращает информацию о маршруте (запрос Bus)
@@ -64,16 +64,8 @@ namespace TransportInformator
             return renderer_.RenderMap(bus_draw_info, stop_draw_info);   
         }
 
-        Router::Route RequestHandler::BuildRoute(std::string_view from, std::string_view to) const
+        std::optional<Router::Route> RequestHandler::BuildRoute(std::string_view from, std::string_view to) const
         {
-            if (!router_.GraphHasValue())
-            {
-                router_.BuildGraph();
-            }
-            if (!router_.RouterHasValue())
-            {
-                router_.InitRouter();
-            }
             return router_.BuildRoute(from, to);
         }
 

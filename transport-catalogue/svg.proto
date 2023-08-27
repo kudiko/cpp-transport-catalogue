@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package db_serialization;
+
+message ColorRGB{
+    uint32 red = 1;
+    uint32 blue = 2;
+    uint32 green = 3;
+}
+
+message ColorRGBA {
+    uint32 red = 1;
+    uint32 blue = 2;
+    uint32 green = 3;
+    double alpha = 4;
+}
+
+message ColorString {
+    string color_string = 1;
+}
+
+message Color {
+    oneof color {
+        ColorRGB color_rgb = 1;
+        ColorRGBA color_rgba = 2;
+        ColorString color_string = 3;
+    }
+
+}

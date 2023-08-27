@@ -1,39 +1,50 @@
+#include <fstream>
+#include <iostream>
+#include <string_view>
 
 #include "transport_catalogue.h"
-#include "json_reader.h"
 #include "request_handler.h"
-#include <fstream>
-int main() {
-    /*
-     * Примерная структура программы:
-     *
-     * Считать JSON из stdin
-     * Построить на его основе JSON базу данных транспортного справочника
-     * Выполнить запросы к справочнику, находящиеся в массиве "stat_requests", построив JSON-массив
-     * с ответами.
-     * Вывести в stdout ответы в виде JSON
-     */
-    
-    TransportInformator::Core::TransportCatalogue tc;
-    TransportInformator::Input::JSONReader jsonreader{tc, std::cin};
-    jsonreader.ReadJSON();
-    TransportInformator::Router::TransportRouter router(tc, jsonreader.GetRouterSettings());
-    TransportInformator::Render::MapRenderer renderer(jsonreader.GetRenderSettings(), tc.GetAllNonEmptyStopsCoords());
-    TransportInformator::ReqHandler::RequestHandler handler(tc, renderer, router);
+#include "json_reader.h"
 
-    jsonreader.SendStatRequests(handler);
+using namespace std::literals;
 
-    //const svg::Document& result = handler.RenderMap();
-    //result.Render(std::cout);
-    
-    /*
-    json::Document right_answer = json::Load(std::cin);
+void PrintUsage(std::ostream& stream = std::cerr) {
+    stream << "Usage: transport_catalogue [make_base|process_requests]\n"sv;
+}
 
-    std::fstream f("output1.json");
-    json::Document answer = json::Load(f);
-    
-    std::cout << bool(answer == right_answer) << std::endl;
-    */
-    
-    return 0;
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        PrintUsage();
+        return 1;
+    }
+
+    const std::string_view mode(argv[1]);
+
+    if (mode == "make_base"sv) {
+
+        TransportInformator::Core::TransportCatalogue tc;
+        TransportInformator::Input::JSONReader jsonreader{tc, std::cin};
+        jsonreader.ReadMakeBaseJSON();
+        TransportInformator::Serialize::Serializator serializer{tc, jsonreader.GetSerializationSettings()};
+        TransportInformator::Router::TransportRouter router(tc, jsonreader.GetRouterSettings());
+        serializer.SerializeToFile(jsonreader.GetRenderSettings(),
+                                   jsonreader.GetRouterSettings(), router);
+
+    } else if (mode == "process_requests"sv) {
+
+        TransportInformator::Core::TransportCatalogue tc;
+        TransportInformator::Input::JSONReader jsonreader{tc, std::cin};
+        jsonreader.ReadProcessRequestsJSON();
+        TransportInformator::Serialize::Serializator serializer{tc, jsonreader.GetSerializationSettings()};
+        TransportInformator::Router::TransportRouter router = serializer.UnserializeFromFile();
+
+        TransportInformator::Render::MapRenderer renderer(serializer.GetRenderSettings(), tc.GetAllNonEmptyStopsCoords());
+        TransportInformator::ReqHandler::RequestHandler handler(tc, renderer, router);
+
+        jsonreader.SendStatRequests(handler);
+
+    } else {
+        PrintUsage();
+        return 1;
+    }
 }

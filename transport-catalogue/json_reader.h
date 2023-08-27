@@ -5,7 +5,6 @@
 #include "request_handler.h"
 #include "json_builder.h"
 
-
 /*
  * Здесь можно разместить код наполнения транспортного справочника данными из JSON,
  * а также код обработки запросов к базе и формирование массива ответов в формате JSON
@@ -53,7 +52,7 @@ namespace Input
         BUS,
         STOP,
         MAP,
-        ROUTE
+        ROUTE,
     };
 
     class JSONReader;
@@ -113,10 +112,12 @@ namespace Input
     {
         public:
         JSONReader(Core::TransportCatalogue& tc, std::istream& in);
-        void ReadJSON();
+        void ReadMakeBaseJSON();
+        void ReadProcessRequestsJSON();
         void Print(std::ostream &out, json::Document doc_to_print);
         Render::RenderSettings GetRenderSettings() const;
         Router::TransportRouterParameters GetRouterSettings() const;
+        Serialize::SerializationParameters GetSerializationSettings() const;
         void SendStatRequests(ReqHandler::RequestHandler& rh);
 
         private:
@@ -151,7 +152,10 @@ namespace Input
 
         void ProcessRouterSettings(const json::Dict& router_settings);
         Router::TransportRouterParameters router_settings_;
-        
+
+
+        void ProcessSerializationSettings(const json::Dict& serialization_settings);
+        Serialize::SerializationParameters serializatoin_settings_;
         
     };
 

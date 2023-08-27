@@ -26,6 +26,15 @@ struct TransportRouterParameters
         return *this;
     }
 
+    int GetBusWaitTime() const
+    {
+        return bus_wait_time;
+    }
+    double GetBusVelocity() const
+    {
+        return bus_velocity;
+    }
+
     private:
     friend class TransportRouter;
     int bus_wait_time = -1;
@@ -40,7 +49,6 @@ struct Route
     {
         std::string stop_name;
         double time;
-        
     };
 
     struct RouteElementBus
@@ -58,13 +66,39 @@ class TransportRouter
 {
     public:
     TransportRouter(const Core::TransportCatalogue& tc, TransportRouterParameters pars);
-    void BuildGraph();
-    void InitRouter();
-    Route BuildRoute(std::string_view from, std::string_view to) const;
-    bool GraphHasValue() const;
-    bool RouterHasValue() const;
+    TransportRouter(const Core::TransportCatalogue& tc, TransportRouterParameters pars,
+                    const graph::DirectedWeightedGraph<double>& graph,
+                    const graph::Router<double>& router,
+                    std::unordered_map<size_t, std::string> edge_id_to_bus_name,
+                    std::unordered_map<size_t, int> edge_id_to_span_count
+                    );
+
+    std::optional<Route> BuildRoute(std::string_view from, std::string_view to) const;
+
+    graph::DirectedWeightedGraph<double> GetGraph() const
+    {
+        assert(graph_.has_value());
+        return graph_.value();
+    }
+    graph::Router<double> GetRouter() const
+    {
+        assert(router_.has_value());
+        return router_.value();
+    }
+    std::unordered_map<size_t, std::string> GetIdToBusName() const
+    {
+        return edge_id_to_bus_name_;
+    }
+    std::unordered_map<size_t, int> GetIdToSpanCount() const
+    {
+        return edge_id_to_span_count_;
+    }
+
 
     private:
+
+    void BuildGraph();
+    void InitRouter();
 
     struct StopVertices
     {
@@ -88,8 +122,10 @@ class TransportRouter
 
     Route ProcessRouteInfo(const graph::Router<double>::RouteInfo& route_info) const;
 
-    std::unordered_map<size_t, std::string_view> edge_id_to_bus_name_;
-    std::unordered_map<size_t, int> edge_td_to_span_count_;
+    std::unordered_map<size_t, std::string> edge_id_to_bus_name_;
+    std::unordered_map<size_t, int> edge_id_to_span_count_;
+
+
 
 };
 

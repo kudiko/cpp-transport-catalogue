@@ -10,6 +10,7 @@
 
 #include "geo.h"
 #include "domain.h"
+#include <transport_catalogue.pb.h>
 
 namespace TransportInformator
 {
@@ -46,10 +47,11 @@ class TransportCatalogue
     
     std::set<std::string_view> GetBusesForStop(std::string_view stop_name) const;
     std::vector<detail::Coordinates> GetBusStopCoordsForBus(std::string_view bus_name) const;
-    
+
+    db_serialization::TransportCatalogue DumpDB() const;
 
     private:
-    
+
     std::deque<Stop> stops_;
     std::unordered_map<std::string_view, Stop*> stops_index_;
 
